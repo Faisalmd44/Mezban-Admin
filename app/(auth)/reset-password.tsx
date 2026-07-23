@@ -21,11 +21,37 @@ export default function ResetPasswordScreen() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    let recovered = false;
+
+    const exchangeRecoveryToken = async () => {
+      if (Platform.OS !== "web") return;
+      const hash = window.location.hash.replace(/^#/, "");
+      const params = new URLSearchParams(hash);
+      const type = params.get("type");
+      const refreshToken = params.get("refresh_token");
+      const accessToken = params.get("access_token");
+
+      if (type === "recovery" && refreshToken) {
+        const { data, error: sbError } = await supabase.auth.setSession({
+          access_token: accessToken || "",
+          refresh_token: refreshToken,
+        });
+        if (!sbError && data.session) {
+          recovered = true;
+          setRecoveryReady(true);
+        }
+      }
+    };
+
+    exchangeRecoveryToken();
+
     const { data: listener } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "PASSWORD_RECOVERY") {
+      if (event === "PASSWORD_RECOVERY" && !recovered) {
+        recovered = true;
         setRecoveryReady(true);
       }
     });
+
     return () => { listener.subscription.unsubscribe(); };
   }, []);
 
