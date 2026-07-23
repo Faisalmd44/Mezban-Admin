@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS, SPACING, RADIUS, SHADOW } from "@/src/theme";
 import { api } from "@/src/api";
 import { stopAlert } from "@/src/services/AdminNotificationService";
+import { printOrder, type PrintOrderData, type PrintType } from "@/src/services/PrinterService";
 
 const STATUS_FLOW = ["received", "preparing", "packed", "out_for_delivery", "delivered"];
 const STATUS_LABEL: Record<string, string> = {
@@ -68,6 +69,13 @@ export default function OrderDetail() {
   const idx = STATUS_FLOW.indexOf(order.status);
   const next = idx >= 0 && idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
 
+  const handleReprint = async (type: PrintType) => {
+    setActing(true);
+    try { await printOrder(order as PrintOrderData, type); }
+    catch { Alert.alert("Error", "Failed to print. Check printer connection."); }
+    finally { setActing(false); }
+  };
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <LinearGradient colors={[COLORS.black, COLORS.brandDark]} style={styles.header}>
@@ -95,6 +103,17 @@ export default function OrderDetail() {
 
           <View style={styles.totalRow}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>₹{order.total.toFixed(0)}</Text></View>
           <Text style={styles.payMethod}>Payment: {order.payment_method.toUpperCase()}</Text>
+        </View>
+
+        <View style={styles.printRow}>
+          <Pressable style={styles.printBtn} onPress={() => handleReprint("kot")}>
+            <Ionicons name="receipt-outline" size={18} color={COLORS.gold} />
+            <Text style={styles.printBtnTxt}>Reprint KOT</Text>
+          </Pressable>
+          <Pressable style={styles.printBtn} onPress={() => handleReprint("bill")}>
+            <Ionicons name="document-text-outline" size={18} color={COLORS.gold} />
+            <Text style={styles.printBtnTxt}>Reprint Bill</Text>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -139,6 +158,9 @@ const styles = StyleSheet.create({
   totalLabel: { color: COLORS.white, fontWeight: "900", fontSize: 18 },
   totalValue: { color: COLORS.gold, fontWeight: "900", fontSize: 22 },
   payMethod: { color: COLORS.textMuted, fontSize: 12, marginTop: 6, fontWeight: "700" },
+  printRow: { flexDirection: "row", gap: 8, marginHorizontal: SPACING.lg, marginBottom: SPACING.md },
+  printBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: COLORS.charcoal, borderWidth: 1, borderColor: COLORS.gold, paddingVertical: 10, borderRadius: RADIUS.md },
+  printBtnTxt: { color: COLORS.gold, fontWeight: "700", fontSize: 12 },
   actionBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 12, paddingHorizontal: SPACING.lg, paddingTop: 12, backgroundColor: COLORS.blackSoft, borderTopColor: COLORS.border, borderTopWidth: 1 },
   actionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: RADIUS.md },
   rejectBtn: { backgroundColor: COLORS.error },

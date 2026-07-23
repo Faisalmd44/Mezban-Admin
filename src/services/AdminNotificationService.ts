@@ -7,6 +7,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { api } from "@/src/api";
+import { autoPrintNewOrder, type PrintOrderData } from "@/src/services/PrinterService";
 
 export type OrderSummary = {
   id: string;
@@ -68,14 +69,16 @@ async function getFCMToken(): Promise<string | null> {
 async function pollPendingOrders() {
   try {
     const orders = await api.adminPendingOrders();
-    const newIds = new Set(orders.map((o: any) => o.id));
     const oldIds = new Set(pendingOrders.map((o) => o.id));
-    const hasNew = orders.some((o: any) => !oldIds.has(o.id));
+    const newOrders = orders.filter((o: any) => !oldIds.has(o.id));
     pendingOrders = orders;
     await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(orders));
-    if (hasNew) {
+    if (newOrders.length > 0) {
       await playAlarm();
       scheduleReminders(orders);
+      for (const order of newOrders) {
+        autoPrintNewOrder(order as PrintOrderData).catch(() => {});
+      }
     }
     notifyListeners();
   } catch {}

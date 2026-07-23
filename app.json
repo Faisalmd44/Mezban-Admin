@@ -27,7 +27,13 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.USE_FULL_SCREEN_INTENT",
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.USE_EXACT_ALARM"
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {
@@ -59,7 +65,8 @@
       "./plugins/withNotifeeMavenRepo",
       "./plugins/withPluginManagementRepos",
       "./plugins/withDebuggableVariants",
-      "./plugins/withGradleMemoryFix"
+      "./plugins/withGradleMemoryFix",
+      "./plugins/withBluetoothPrinter"
     ],
     "experiments": {
       "tsdImports": true

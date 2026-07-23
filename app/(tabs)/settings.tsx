@@ -51,6 +51,7 @@ export default function SettingsScreen() {
       <NavRow icon="receipt" label="All Orders" onPress={() => router.push("/(tabs)/orders")} />
       <NavRow icon="restaurant" label="Menu Management" onPress={() => router.push("/(tabs)/menu")} />
       <NavRow icon="notifications" label="Notifications" onPress={() => router.push("/(tabs)/notifications")} />
+      <NavRow icon="printer" label="Bluetooth Printer" onPress={() => router.push("/(tabs)/printer")} />
       <NavRow icon="logo-whatsapp" label="WhatsApp Support" onPress={() => Linking.openURL("https://wa.me/918595244548?text=Hi%20Mezbaan%20Admin")} />
 
       <Text style={styles.sectionTitle}>About</Text>
