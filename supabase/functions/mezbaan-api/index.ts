@@ -67,6 +67,63 @@ async function verifySupabaseToken(token: string) {
   return data.user;
 }
 
+async function sendAdminPushNotification(supabaseClient: any, order: any) {
+  try {
+    const { data: admins } = await supabaseClient
+      .from("users")
+      .select("id")
+      .eq("is_admin", true);
+
+    if (!admins || admins.length === 0) return;
+
+    const adminIds = admins.map((a: any) => a.id);
+    const { data: tokens } = await supabaseClient
+      .from("fcm_tokens")
+      .select("token")
+      .in("user_id", adminIds);
+
+    if (!tokens || tokens.length === 0) return;
+
+    const serverKey = Deno.env.get("FCM_SERVER_KEY");
+    if (!serverKey) return;
+
+    const itemSummary = (order.order_items || [])
+      .map((i: any) => `${i.quantity}x ${i.name}`)
+      .join(", ");
+
+    const payload = {
+      notification: {
+        title: "New Order Received!",
+        body: `Order #${order.order_no} — ${itemSummary || "New order"} • ₹${order.total}`,
+        sound: "alarm",
+      },
+      data: {
+        order_id: order.id,
+        order_no: order.order_no,
+        type: "new_order",
+      },
+      android: {
+        priority: "high",
+        notification: {
+          sound: "alarm",
+          channel_id: "new-order-alarm",
+          priority: "high",
+        },
+      },
+      registration_ids: tokens.map((t: any) => t.token),
+    };
+
+    await fetch("https://fcm.googleapis.com/fcm/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `key=${serverKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {}
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -219,6 +276,9 @@ Deno.serve(async (req: Request) => {
       if (oie) return error(oie.message, 500);
 
       const { data: fullOrder } = await supabase.from("orders").select("*, order_items(*)").eq("id", order.id).single();
+
+      await sendAdminPushNotification(supabase, fullOrder);
+
       return json(fullOrder);
     }
 

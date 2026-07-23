@@ -85,7 +85,7 @@ export default function OrderDetail() {
           <Text style={styles.detailText}>{order.address}</Text>
 
           <Text style={styles.sectionTitle}>Items</Text>
-          {order.items.map((item: any, i: number) => (
+          {(order.order_items || order.items || []).map((item: any, i: number) => (
             <View key={i} style={styles.itemRow}>
               <Text style={styles.itemQty}>{item.quantity}x</Text>
               <Text style={styles.itemName}>{item.name}</Text>
