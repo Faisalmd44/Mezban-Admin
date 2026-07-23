@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mezbaan-admin",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "android": {
       "package": "com.emergent.restroorder.admin",
       "adaptiveIcon": {
