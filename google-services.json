@@ -33,6 +33,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093678643116:android:c9bb986dcb87475b18ec09",
+        "android_client_info": {
+          "package_name": "com.mezbaanapp.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1093678643116-tahtmtcjpjeek73c14smaf9mpf7l25m0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBAFAjnE3t9AJmiBezAaSbDgAhs-x1Rzo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1093678643116-9ogb21a6gs5cmdnlr5j32qfahqclfi7v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
