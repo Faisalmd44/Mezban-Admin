@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { makeRedirectUri } from "expo-auth-session";
 import { supabase } from "@/src/lib/supabase";
 
-const RESET_REDIRECT_URI = makeRedirectUri({ scheme: "mezbaan", path: "reset-password" });
+const RESET_REDIRECT_URI = makeRedirectUri({ scheme: "mezbaan-admin", path: "reset-password" });
 
 export function useEmailAuth() {
   const [loading, setLoading] = useState(false);
