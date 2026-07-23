@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
   Switch,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
@@ -43,7 +44,12 @@ export default function PrinterScreen() {
     try {
       const p = await getPairedPrinter();
       setPaired(p);
-      if (p) { setWidth58(p.width_mm === 58); setConnected(await isPrinterConnected()); }
+      if (p) {
+        setWidth58(p.width_mm === 58);
+        setConnected(await isPrinterConnected());
+      } else {
+        setConnected(false);
+      }
       const auto = await isAutoPrintEnabled();
       setAutoPrint(auto);
       const devs = await scanBLEPrinters();
@@ -181,6 +187,14 @@ export default function PrinterScreen() {
           </View>
         </View>
 
+        {!connected && !scanning && !paired && (
+          <View style={styles.noPrinterBox}>
+            <Ionicons name="printer-outline" size={48} color={COLORS.textMuted} />
+            <Text style={styles.noPrinterTxt}>No printer connected</Text>
+            <Text style={styles.noPrinterSub}>Pair a Bluetooth thermal printer to enable auto-printing</Text>
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>Available Printers</Text>
 
         {scanning ? (
@@ -256,6 +270,9 @@ const styles = StyleSheet.create({
   widthBtn: { paddingHorizontal: 14, paddingVertical: 6 },
   widthBtnActive: { backgroundColor: COLORS.gold },
   widthBtnTxt: { color: COLORS.white, fontWeight: "700", fontSize: 12 },
+  noPrinterBox: { alignItems: "center", paddingVertical: 30, gap: 8, marginHorizontal: SPACING.lg, backgroundColor: COLORS.charcoal, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginTop: SPACING.md },
+  noPrinterTxt: { color: COLORS.white, fontWeight: "700", fontSize: 16 },
+  noPrinterSub: { color: COLORS.textMuted, fontSize: 12, textAlign: "center", paddingHorizontal: SPACING.xl },
   sectionTitle: { fontWeight: "800", fontSize: 16, marginHorizontal: SPACING.lg, marginTop: SPACING.lg, marginBottom: SPACING.sm, color: COLORS.white },
   scanningBox: { alignItems: "center", paddingVertical: 40, gap: 12 },
   scanningTxt: { color: COLORS.textSecondary, fontSize: 14 },

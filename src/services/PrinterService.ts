@@ -5,7 +5,7 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { Platform, NativeModules } from "react-native";
 
 export type PairedPrinter = {
   device_name: string;
@@ -38,16 +38,24 @@ const RETRY_DELAY = 2000;
 
 let blePrinter: any = null;
 let connected: PairedPrinter | null = null;
+let nativeAvailable: boolean | null = null;
 
-async function getBLEPrinter() {
+function isNativeAvailable(): boolean {
+  if (nativeAvailable !== null) return nativeAvailable;
+  nativeAvailable = Platform.OS === "android" && !!NativeModules.RNBLEPrinter;
+  return nativeAvailable;
+}
+
+async function getBLEPrinter(): Promise<any | null> {
   if (blePrinter) return blePrinter;
+  if (!isNativeAvailable()) return null;
   try {
-    if (Platform.OS === "android") {
-      const mod: any = await import("react-native-thermal-receipt-printer-image-qr");
-      blePrinter = mod.BLEPrinter;
-      await blePrinter.init();
-    }
-  } catch {}
+    const mod: any = await import("react-native-thermal-receipt-printer-image-qr");
+    blePrinter = mod.BLEPrinter;
+    await blePrinter.init();
+  } catch {
+    blePrinter = null;
+  }
   return blePrinter;
 }
 
@@ -74,12 +82,16 @@ export async function setAutoPrintEnabled(enabled: boolean) {
 export async function scanBLEPrinters(): Promise<PairedPrinter[]> {
   const printer = await getBLEPrinter();
   if (!printer) return [];
-  const devices = await printer.getDeviceList();
-  return devices.map((d: any) => ({
-    device_name: d.device_name,
-    inner_mac_address: d.inner_mac_address,
-    width_mm: 80 as const,
-  }));
+  try {
+    const devices = await printer.getDeviceList();
+    return devices.map((d: any) => ({
+      device_name: d.device_name,
+      inner_mac_address: d.inner_mac_address,
+      width_mm: 80 as const,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function connectPrinter(printer: PairedPrinter): Promise<boolean> {
@@ -104,6 +116,7 @@ export async function disconnectPrinter() {
 
 export async function isPrinterConnected(): Promise<boolean> {
   if (connected) return true;
+  if (!isNativeAvailable()) return false;
   const paired = await getPairedPrinter();
   if (!paired) return false;
   return await connectPrinter(paired);
@@ -246,15 +259,19 @@ async function printRaw(text: string, width: 58 | 80): Promise<void> {
   const p = await getBLEPrinter();
   if (!p) throw new Error("Printer not available");
 
-  const { PrinterWidth } = await import("react-native-thermal-receipt-printer-image-qr");
-  const printerWidthType = width === 58 ? PrinterWidth["58mm"] : PrinterWidth["80mm"];
+  try {
+    const { PrinterWidth } = await import("react-native-thermal-receipt-printer-image-qr");
+    const printerWidthType = width === 58 ? PrinterWidth["58mm"] : PrinterWidth["80mm"];
 
-  p.printBill(text, {
-    beep: true,
-    cut: true,
-    tailingLine: true,
-    printerWidthType,
-  } as any);
+    p.printBill(text, {
+      beep: true,
+      cut: true,
+      tailingLine: true,
+      printerWidthType,
+    } as any);
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function printOrder(
@@ -264,8 +281,8 @@ export async function printOrder(
   const paired = await getPairedPrinter();
   if (!paired) return false;
 
-  const connected = await isPrinterConnected();
-  if (!connected) return false;
+  const isConnected = await isPrinterConnected();
+  if (!isConnected) return false;
 
   const text = type === "kot" ? buildKOT(order, paired.width_mm) : buildBill(order, paired.width_mm);
 
