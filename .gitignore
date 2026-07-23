@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+.metro-cache/
+*.log
+.DS_Store
+android/
+ios/
+.env.local
+google-services.json
+assets/alarm.wav
