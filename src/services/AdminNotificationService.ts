@@ -56,10 +56,8 @@ async function getFCMToken(): Promise<string | null> {
   if (fcmToken) return fcmToken;
   try {
     if (Platform.OS === "android") {
-      const messaging = await import("@react-native-firebase/messaging");
-      const auth = await import("@react-native-firebase/app");
-      const app = auth.default;
-      const token = await messaging.getToken(app);
+      const messaging: any = (await import("@react-native-firebase/messaging")).default;
+      const token = await messaging.getToken();
       fcmToken = token;
       await api.registerFCMToken(token);
     }
@@ -86,7 +84,7 @@ async function pollPendingOrders() {
 async function playAlarm() {
   try {
     if (Platform.OS === "android") {
-      const notifee = await import("@notifee/react-native");
+      const notifee: any = (await import("@notifee/react-native")).default;
       const channelId = await notifee.createChannel({
         id: "new-order-alarm",
         name: "New Order Alarm",
@@ -136,7 +134,7 @@ export async function stopAlert(orderId?: string) {
   reminderTimeouts = [];
   try {
     if (Platform.OS === "android") {
-      const notifee = await import("@notifee/react-native");
+      const notifee: any = (await import("@notifee/react-native")).default;
       await notifee.cancelAllNotifications();
     }
   } catch {}
