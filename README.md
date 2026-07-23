@@ -20,19 +20,30 @@ npx expo start
 
 ## Build APK via GitHub Actions
 
-The workflow file is at `github-actions-workflow.yml` in the repo root. To activate it:
+The GitHub Actions workflow file couldn't be created directly via the API (the bot token lacks the `workflows` permission scope). To activate the build:
 
-1. Move it to `.github/workflows/build-apk.yml`:
-   ```bash
-   mkdir -p .github/workflows
-   mv github-actions-workflow.yml .github/workflows/build-apk.yml
-   git add .github/workflows/build-apk.yml
-   git commit -m "Move workflow to .github/workflows"
-   git push
-   ```
-2. Add repository secrets (Settings > Secrets and variables > Actions):
-   - `EXPO_PUBLIC_SUPABASE_URL`
-   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-3. The build will trigger automatically on push to main, or manually via Actions tab.
+### Option 1: Run the setup script (easiest)
+```bash
+git clone https://github.com/Faisalmd44/Mezban-Admin.git
+cd Mezban-Admin
+chmod +x setup-workflow.sh
+./setup-workflow.sh
+```
+This creates `.github/workflows/build-apk.yml`, commits it, and pushes. The build triggers automatically.
 
-The APK will be available as a downloadable artifact in the Actions run.
+### Option 2: Manual
+1. Clone the repo and create the file:
+```bash
+mkdir -p .github/workflows
+# Copy the workflow content from setup-workflow.sh into:
+# .github/workflows/build-apk.yml
+git add .github/workflows/build-apk.yml
+git commit -m "Add GitHub Actions workflow"
+git push
+```
+
+### After the workflow is active:
+- Pushes to `main` trigger the build automatically
+- Or go to **Actions** tab > **Build Android APK** > **Run workflow** to trigger manually
+- The APK will be available as a downloadable artifact in the Actions run page
+- No secrets needed — the workflow reads Supabase config from the `.env` file
