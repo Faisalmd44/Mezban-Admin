@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Pressable, TextInput,
+  View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Pressable, TextInput, Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
@@ -22,9 +22,10 @@ export default function AdminLoginScreen() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, loading: authLoading, error: authError } = useEmailAuth();
+  const { signIn, signUp, resetPassword, loading: authLoading, error: authError, setError: setAuthError, needsConfirmation } = useEmailAuth();
   const displayError = error || authError;
 
   const finishLogin = async (res: { token: string; user: any }) => {
@@ -49,6 +50,7 @@ export default function AdminLoginScreen() {
 
   const onSignUp = async () => {
     setError("");
+    setAuthError("");
     if (!name.trim()) { setError("Please enter your name"); return; }
     if (!EMAIL_REGEX.test(email)) { setError("Please enter a valid email address"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
@@ -61,6 +63,20 @@ export default function AdminLoginScreen() {
       await finishLogin(res);
     } catch (e: any) { setError(e?.message || "Sign up failed"); }
     finally { setLoading(false); }
+  };
+
+  const onForgotPassword = async () => {
+    if (!EMAIL_REGEX.test(email)) {
+      setError("Please enter your email address above first, then tap Forgot Password");
+      return;
+    }
+    setError("");
+    setAuthError("");
+    const ok = await resetPassword(email);
+    if (ok) {
+      setResetSent(true);
+      Alert.alert("Check Your Email", `A password reset link has been sent to ${email}. Tap the link in the email to reset your password.`);
+    }
   };
 
   return (
@@ -96,6 +112,22 @@ export default function AdminLoginScreen() {
               <TextInput testID="login-password-input" placeholder="Password" placeholderTextColor={COLORS.textMuted} secureTextEntry autoCapitalize="none" value={password} onChangeText={setPassword} style={styles.input} />
             </View>
 
+            {mode === "signin" && (
+              <View style={styles.forgotRow}>
+                <Pressable testID="forgot-password-btn" onPress={onForgotPassword} disabled={loading || authLoading}>
+                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {resetSent && (
+              <Text style={styles.successMsg}>Reset email sent! Check your inbox.</Text>
+            )}
+
+            {needsConfirmation && mode === "signup" && (
+              <Text style={styles.confirmMsg}>Account created! Check your email to confirm, then switch to Sign In.</Text>
+            )}
+
             {displayError ? <Text testID="login-error" style={styles.error}>{displayError}</Text> : null}
 
             <Pressable testID={mode === "signin" ? "login-signin-btn" : "login-signup-btn"} onPress={mode === "signin" ? onSignIn : onSignUp} disabled={loading || authLoading} style={({ pressed }) => [styles.cta, pressed && { transform: [{ scale: 0.98 }] }]}>
@@ -109,7 +141,7 @@ export default function AdminLoginScreen() {
 
             <View style={styles.switchRow}>
               <Text style={styles.switchTxt}>{mode === "signin" ? "Don't have an account? " : "Already have an account? "}</Text>
-              <Pressable testID={mode === "signin" ? "login-goto-signup" : "login-goto-signin"} onPress={() => { setError(""); setMode(mode === "signin" ? "signup" : "signin"); }}>
+              <Pressable testID={mode === "signin" ? "login-goto-signup" : "login-goto-signin"} onPress={() => { setError(""); setAuthError(""); setResetSent(false); setMode(mode === "signin" ? "signup" : "signin"); }}>
                 <Text style={styles.switchLink}>{mode === "signin" ? "Sign Up" : "Sign In"}</Text>
               </Pressable>
             </View>
@@ -136,6 +168,10 @@ const styles = StyleSheet.create({
   cardSub: { color: COLORS.textSecondary, marginTop: 4, marginBottom: SPACING.lg, fontSize: 13 },
   inputRow: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.surfaceAlt, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, marginBottom: SPACING.md, height: 56, borderWidth: 1, borderColor: COLORS.border },
   input: { flex: 1, fontSize: 16, color: COLORS.white, height: "100%" },
+  forgotRow: { alignItems: "flex-end", marginBottom: SPACING.sm },
+  forgotText: { color: COLORS.gold, fontSize: 13, fontWeight: "600" },
+  successMsg: { color: COLORS.success || "#4ade80", fontSize: 13, textAlign: "center", marginBottom: SPACING.sm },
+  confirmMsg: { color: "#fbbf24", fontSize: 13, textAlign: "center", marginBottom: SPACING.sm, lineHeight: 18 },
   error: { color: COLORS.error, marginBottom: SPACING.sm, marginTop: SPACING.sm, textAlign: "center" },
   cta: { backgroundColor: COLORS.gold, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, marginTop: SPACING.sm, ...SHADOW.gold },
   ctaText: { color: COLORS.black, fontWeight: "900", fontSize: 16 },

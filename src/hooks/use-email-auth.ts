@@ -7,14 +7,19 @@ const RESET_REDIRECT_URI = makeRedirectUri({ scheme: "mezbaan", path: "reset-pas
 export function useEmailAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const signUp = useCallback(async (email: string, password: string): Promise<string | null> => {
-    setError(""); setLoading(true);
+    setError(""); setLoading(true); setNeedsConfirmation(false);
     try {
       const { data, error: sbError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: RESET_REDIRECT_URI } });
       if (sbError) { setError(sbError.message); return null; }
-      if (!data.session || !data.session.access_token) { setError("Sign up succeeded but no session was returned."); return null; }
-      return data.session.access_token;
+      if (data.session && data.session.access_token) {
+        return data.session.access_token;
+      }
+      setNeedsConfirmation(true);
+      setError("Account created! Please check your email to confirm your account, then sign in.");
+      return null;
     } catch (e: any) { setError(e?.message || "Sign up failed"); return null; }
     finally { setLoading(false); }
   }, []);
@@ -40,5 +45,5 @@ export function useEmailAuth() {
     finally { setLoading(false); }
   }, []);
 
-  return { signUp, signIn, resetPassword, loading, error, setError };
+  return { signUp, signIn, resetPassword, loading, error, setError, needsConfirmation };
 }
