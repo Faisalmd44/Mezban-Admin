@@ -224,10 +224,7 @@ Deno.serve(async (req: Request) => {
     // GET /menu/:id
     if (path.match(/^\/menu\/[^\/]+$/) && method === "GET") {
       const id = path.split("/")[2];
-      const { data, error: e } = await supabase.from("menu_items").select("*").eq("id", id).maybeSingle();
-      if (e) return error(e.message, 500);
-      if (!data) return error("Item not found", 404);
-      return json(data);
+      { const { data, error: e } = await supabase.from("menu_items").select("*").eq("id", id).maybeSingle(); if (e) return error(e.message, 500); if (!data) return error("Item not found", 404); return json(data); }
     }
 
     // ============================================================
@@ -299,46 +296,7 @@ Deno.serve(async (req: Request) => {
 
     // GET /coupons
     if (path === "/coupons" && method === "GET") {
-      const { data, error: e } = await supabase.from("coupons").select("*").eq("active", true).order("created_at", { ascending: false });
-      if (e) return error(e.message, 500);
-      return json(data);
-    }
-
-    // ============================================================
-    // PAYMENTS (Razorpay config — returns key placeholder)
-    // ============================================================
-
-    // GET /payments/razorpay/config
-    if (path === "/payments/razorpay/config" && method === "GET") {
-      const key = Deno.env.get("RAZORPAY_KEY_ID") || "";
-      return json({ key_id: key });
-    }
-
-    // POST /payments/razorpay/verify
-    if (path === "/payments/razorpay/verify" && method === "POST") {
-      const user = await getAuthUser(req);
-      if (!user) return error("Unauthorized", 401);
-      const body = await req.json();
-      const { razorpay_payment_id, razorpay_order_id, order_id } = body;
-      const { data, error: e } = await supabase.from("orders").update({
-        payment_status: "paid",
-        razorpay_payment_id,
-        razorpay_order_id,
-      }).eq("id", order_id).select("*").single();
-      if (e) return error(e.message, 500);
-      return json(data);
-    }
-
-    // POST /payments/razorpay/cancel
-    if (path === "/payments/razorpay/cancel" && method === "POST") {
-      const user = await getAuthUser(req);
-      if (!user) return error("Unauthorized", 401);
-      const body = await req.json();
-      const { order_id } = body;
-      const { data, error: e } = await supabase.from("orders").update({
-        payment_status: "cancelled",
-        status: "cancelled",
-      }).eq("id", order_id).select("*").single();
+      const { data, error: e } = await supabase.from("coupons").select("*").eq("active", true);
       if (e) return error(e.message, 500);
       return json(data);
     }
@@ -358,17 +316,6 @@ Deno.serve(async (req: Request) => {
       return json(data);
     }
 
-    // GET /admin/orders/pending
-    if (path === "/admin/orders/pending" && method === "GET") {
-      const user = await getAuthUser(req);
-      if (!user) return error("Unauthorized", 401);
-      const profile = await getUserProfile(user.id);
-      if (!profile?.is_admin) return error("Forbidden", 403);
-      const { data, error: e } = await supabase.from("orders").select("*, order_items(*)").eq("status", "received").order("created_at", { ascending: false });
-      if (e) return error(e.message, 500);
-      return json(data);
-    }
-
     // PATCH /admin/orders/:id/status
     if (path.match(/^\/admin\/orders\/[^\/]+\/status$/) && method === "PATCH") {
       const user = await getAuthUser(req);
@@ -378,9 +325,7 @@ Deno.serve(async (req: Request) => {
       const id = path.split("/")[3];
       const body = await req.json();
       const { status } = body;
-      const validStatuses = ["received", "preparing", "packed", "out_for_delivery", "delivered", "cancelled"];
-      if (!validStatuses.includes(status)) return error("Invalid status", 400);
-      const { data, error: e } = await supabase.from("orders").update({ status }).eq("id", id).select("*").single();
+      const { data, error: e } = await supabase.from("orders").update({ status }).eq("id", id).select("*, order_items(*)").single();
       if (e) return error(e.message, 500);
       return json(data);
     }
@@ -391,23 +336,60 @@ Deno.serve(async (req: Request) => {
       if (!user) return error("Unauthorized", 401);
       const profile = await getUserProfile(user.id);
       if (!profile?.is_admin) return error("Forbidden", 403);
-
+      const { data: orders } = await supabase.from("orders").select("total, status, payment_method, payment_status, created_at");
       const { count: totalOrders } = await supabase.from("orders").select("*", { count: "exact", head: true });
-      const { count: activeOrders } = await supabase.from("orders").select("*", { count: "exact", head: true }).in("status", ["received", "preparing", "packed", "out_for_delivery"]);
-      const { count: totalCustomers } = await supabase.from("users").select("*", { count: "exact", head: true });
-
-      const { data: revenueData } = await supabase.from("orders").select("total").neq("status", "cancelled");
-      const revenue = (revenueData || []).reduce((sum: number, o: any) => sum + Number(o.total), 0);
-
-      return json({
-        total_orders: totalOrders || 0,
-        active_orders: activeOrders || 0,
-        total_customers: totalCustomers || 0,
-        revenue,
-      });
+      const { count: totalMenu } = await supabase.from("menu_items").select("*", { count: "exact", head: true });
+      const { count: totalUsers } = await supabase.from("users").select("*", { count: "exact", head: true });
+      const revenue = (orders || []).reduce((s: number, o: any) => s + Number(o.total || 0), 0);
+      const pending = (orders || []).filter((o: any) => o.status === "received").length;
+      const delivered = (orders || []).filter((o: any) => o.status === "delivered").length;
+      const cod = (orders || []).filter((o: any) => o.payment_method === "cod").length;
+      const online = (orders || []).filter((o: any) => o.payment_method === "razorpay").length;
+      return json({ totalOrders, totalMenu, totalUsers, revenue, pending, delivered, cod, online, orders: orders || [] });
     }
 
-    // PATCH /admin/menu/:id
+    // GET /admin/orders/pending
+    if (path === "/admin/orders/pending" && method === "GET") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const profile = await getUserProfile(user.id);
+      if (!profile?.is_admin) return error("Forbidden", 403);
+      const { data, error: e } = await supabase.from("orders").select("*, order_items(*)").eq("status", "received").order("created_at", { ascending: false });
+      if (e) return error(e.message, 500);
+      return json(data || []);
+    }
+
+    // GET /admin/menu
+    if (path === "/admin/menu" && method === "GET") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const profile = await getUserProfile(user.id);
+      if (!profile?.is_admin) return error("Forbidden", 403);
+      const { data, error: e } = await supabase.from("menu_items").select("*").order("created_at", { ascending: false });
+      if (e) return error(e.message, 500);
+      return json(data);
+    }
+
+    // POST /admin/menu — Create new menu item
+    if (path === "/admin/menu" && method === "POST") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const profile = await getUserProfile(user.id);
+      if (!profile?.is_admin) return error("Forbidden", 403);
+      const body = await req.json();
+      const { name, description, price, category, image, in_stock, is_veg, is_bestseller, rating, prep_time, variants } = body;
+      if (!name || price == null) return error("Name and price required", 400);
+      const { data, error: e } = await supabase.from("menu_items").insert({
+        name, description: description || null, price, category: category || "Main",
+        image: image || null, in_stock: in_stock !== false, is_veg: is_veg !== false,
+        is_bestseller: !!is_bestseller, rating: rating || 0, prep_time: prep_time || 30,
+        variants: variants || [],
+      }).select("*").single();
+      if (e) return error(e.message, 500);
+      return json(data);
+    }
+
+    // PATCH /admin/menu/:id — Update menu item (full edit including variants)
     if (path.match(/^\/admin\/menu\/[^\/]+$/) && method === "PATCH") {
       const user = await getAuthUser(req);
       if (!user) return error("Unauthorized", 401);
@@ -415,10 +397,27 @@ Deno.serve(async (req: Request) => {
       if (!profile?.is_admin) return error("Forbidden", 403);
       const id = path.split("/")[3];
       const body = await req.json();
-      const { in_stock } = body;
-      const { data, error: e } = await supabase.from("menu_items").update({ in_stock }).eq("id", id).select("*").single();
+      const updates: any = {};
+      const allowed = ["name", "description", "price", "category", "image", "in_stock", "is_veg", "is_bestseller", "rating", "prep_time", "variants"];
+      for (const key of allowed) {
+        if (key in body) updates[key] = body[key];
+      }
+      if (Object.keys(updates).length === 0) return error("No fields to update", 400);
+      const { data, error: e } = await supabase.from("menu_items").update(updates).eq("id", id).select("*").single();
       if (e) return error(e.message, 500);
       return json(data);
+    }
+
+    // DELETE /admin/menu/:id — Delete menu item
+    if (path.match(/^\/admin\/menu\/[^\/]+$/) && method === "DELETE") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const profile = await getUserProfile(user.id);
+      if (!profile?.is_admin) return error("Forbidden", 403);
+      const id = path.split("/")[3];
+      const { error: e } = await supabase.from("menu_items").delete().eq("id", id);
+      if (e) return error(e.message, 500);
+      return json({ success: true });
     }
 
     // GET /admin/coupons
@@ -440,17 +439,70 @@ Deno.serve(async (req: Request) => {
       if (!profile?.is_admin) return error("Forbidden", 403);
       const code = decodeURIComponent(path.split("/")[3]);
       const body = await req.json();
-      const { data, error: e } = await supabase.from("coupons").update(body).eq("code", code).select("*").single();
+      const updates: any = {};
+      const allowed = ["discount_type", "discount_value", "min_order", "max_uses", "uses", "active", "expires_at"];
+      for (const key of allowed) {
+        if (key in body) updates[key] = body[key];
+      }
+      if (Object.keys(updates).length === 0) return error("No fields to update", 400);
+      const { data, error: e } = await supabase.from("coupons").update(updates).eq("code", code).select("*").single();
       if (e) return error(e.message, 500);
       return json(data);
     }
 
     // ============================================================
-    // 404
+    // PAYMENTS (Razorpay)
     // ============================================================
-    return error("Not found", 404);
 
+    // GET /payments/razorpay/config
+    if (path === "/payments/razorpay/config" && method === "GET") {
+      const key = Deno.env.get("RAZORPAY_KEY_ID");
+      return json({ key_id: key || null });
+    }
+
+    // POST /payments/razorpay/verify
+    if (path === "/payments/razorpay/verify" && method === "POST") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const body = await req.json();
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } = body;
+      const secret = Deno.env.get("RAZORPAY_KEY_SECRET");
+      if (!secret) return error("Razorpay not configured", 500);
+      const { data: order } = await supabase.from("orders").select("*").eq("id", order_id).maybeSingle();
+      if (!order) return error("Order not found", 404);
+      const text = razorpay_order_id + "|" + razorpay_payment_id;
+      const enc = new TextEncoder().encode(text);
+      const keyData = new TextEncoder().encode(secret);
+      const cryptoKey = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc);
+      const sigHex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      if (sigHex !== razorpay_signature) return error("Invalid signature", 400);
+      const { data: updated } = await supabase.from("orders").update({
+        payment_status: "paid",
+        razorpay_order_id,
+        razorpay_payment_id,
+      }).eq("id", order_id).select("*, order_items(*)").single();
+      return json(updated);
+    }
+
+    // POST /payments/razorpay/cancel
+    if (path === "/payments/razorpay/cancel" && method === "POST") {
+      const user = await getAuthUser(req);
+      if (!user) return error("Unauthorized", 401);
+      const body = await req.json();
+      const { order_id } = body;
+      const { data: order } = await supabase.from("orders").select("*").eq("id", order_id).maybeSingle();
+      if (!order) return error("Order not found", 404);
+      if (order.payment_status === "paid") return error("Order already paid", 400);
+      const { data: updated } = await supabase.from("orders").update({
+        status: "cancelled",
+        payment_status: "cancelled",
+      }).eq("id", order_id).select("*, order_items(*)").single();
+      return json(updated);
+    }
+
+    return error("Not found", 404);
   } catch (err) {
-    return error(err.message || "Internal server error", 500);
+    return error("Internal server error", 500);
   }
 });
