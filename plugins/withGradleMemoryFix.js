@@ -1,7 +1,7 @@
-const { withAndroidBuildGradle } = require("@expo/config-plugins");
+const { withProjectBuildGradle } = require("@expo/config-plugins");
 
 module.exports = function withGradleMemoryFix(config) {
-  return withAndroidBuildGradle(config, (config) => {
+  return withProjectBuildGradle(config, (config) => {
     let buildGradle = config.modResults.contents;
     if (!buildGradle.includes("org.gradle.jvmargs")) {
       buildGradle = buildGradle.replace(

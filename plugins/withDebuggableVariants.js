@@ -1,7 +1,7 @@
-const { withAndroidBuildGradle } = require("@expo/config-plugins");
+const { withProjectBuildGradle } = require("@expo/config-plugins");
 
 module.exports = function withDebuggableVariants(config) {
-  return withAndroidBuildGradle(config, (config) => {
+  return withProjectBuildGradle(config, (config) => {
     let buildGradle = config.modResults.contents;
     if (!buildGradle.includes("debuggable true")) {
       buildGradle = buildGradle.replace(
