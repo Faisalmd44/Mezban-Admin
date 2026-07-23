@@ -1,15 +1,18 @@
-const { withAndroidBuildGradle } = require("@expo/config-plugins");
+const { withProjectBuildGradle } = require("@expo/config-plugins");
 
 module.exports = function withNotifeeMavenRepo(config) {
-  return withAndroidBuildGradle(config, (config) => {
-    let buildGradle = config.modResults.contents;
-    if (!buildGradle.includes("maven.notifee.io")) {
-      buildGradle = buildGradle.replace(
-        "allprojects { repositories {",
-        "allprojects { repositories { maven { url 'https://maven.notifee.io' } "
+  return withProjectBuildGradle(config, (config) => {
+    let contents = config.modResults.contents;
+
+    if (!contents.includes("maven.notifee.io")) {
+      contents = contents.replace(
+        /repositories\s*\{/,
+        `repositories {
+        maven { url "https://maven.notifee.app" }`
       );
     }
-    config.modResults.contents = buildGradle;
+
+    config.modResults.contents = contents;
     return config;
   });
 };
