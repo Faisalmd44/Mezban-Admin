@@ -315,3 +315,23 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_menu_items_category ON menu_items(category);
 CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
 CREATE INDEX IF NOT EXISTS idx_fcm_tokens_user_id ON fcm_tokens(user_id);
+
+-- ============================================================
+-- 8. SEED DATA — MENU ITEMS
+-- ============================================================
+INSERT INTO menu_items (name, description, price, category, image, in_stock, is_veg, is_bestseller, rating, prep_time)
+VALUES
+  ('Chicken Biryani', 'Aromatic basmati rice cooked with tender chicken, saffron, and traditional spices', 320, 'Main', 'https://images.pexels.com/photos/12737665/pexels-photo-12737665.jpeg?auto=compress&cs=tinysrgb&w=400', true, false, true, 4.5, 35),
+  ('Veg Biryani', 'Fragrant basmati rice with mixed vegetables, herbs, and biryani spices', 240, 'Main', 'https://images.pexels.com/photos/12737666/pexels-photo-12737666.jpeg?auto=compress&cs=tinysrgb&w=400', true, true, false, 4.2, 30),
+  ('Mutton Korma', 'Slow-cooked mutton in a rich, creamy curry with yogurt and aromatic spices', 380, 'Main', 'https://images.pexels.com/photos/12737667/pexels-photo-12737667.jpeg?auto=compress&cs=tinysrgb&w=400', true, false, true, 4.7, 45),
+  ('Paneer Tikka', 'Grilled cottage cheese marinated in spiced yogurt with bell peppers and onions', 280, 'Starter', 'https://images.pexels.com/photos/12737668/pexels-photo-12737668.jpeg?auto=compress&cs=tinysrgb&w=400', true, true, true, 4.6, 25),
+  ('Butter Naan', 'Soft tandoor-baked flatbread brushed with butter', 40, 'Bread', 'https://images.pexels.com/photos/12737669/pexels-photo-12737669.jpeg?auto=compress&cs=tinysrgb&w=400', true, true, false, 4.3, 15),
+  ('Gulab Jamun', 'Deep-fried milk dumplings soaked in rose-flavored sugar syrup', 120, 'Dessert', 'https://images.pexels.com/photos/12737670/pexels-photo-12737670.jpeg?auto=compress&cs=tinysrgb&w=400', true, true, true, 4.8, 20)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- 9. SEED DATA — COUPONS
+-- ============================================================
+INSERT INTO coupons (code, discount_type, discount_value, min_order, max_uses, uses, active, expires_at)
+VALUES ('WELCOME50', 'flat', 50, 200, null, 0, true, null)
+ON CONFLICT (code) DO NOTHING;
