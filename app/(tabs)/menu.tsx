@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   iconActions: { flexDirection: "row", gap: 12 },
   iconBtn: { padding: 4 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: COLORS.blackSoft, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "92%", paddingBottom: 0 },
+  modalContent: { backgroundColor: COLORS.blackSoft, borderTopLeftRadius: 20, borderTopRightRadius: 20, height: "92%", paddingBottom: 0 },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomColor: COLORS.border, borderBottomWidth: 1 },
   modalTitle: { fontWeight: "900", fontSize: 18, color: COLORS.white },
   closeBtn: { padding: 4 },
