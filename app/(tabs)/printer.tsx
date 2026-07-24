@@ -11,6 +11,7 @@ import {
   Switch,
   Platform,
 } from "react-native";
+import { PermissionsAndroid } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,9 +39,38 @@ export default function PrinterScreen() {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [width58, setWidth58] = useState(true);
+  const requestBluetoothPermissions = async () => {
+  if (Platform.OS !== "android") return true;
+
+  try {
+    const result = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    ]);
+
+    return (
+      result[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
+        PermissionsAndroid.RESULTS.GRANTED &&
+      result[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
+        PermissionsAndroid.RESULTS.GRANTED
+    );
+  } catch {
+    return false;
+  }
+};
 
   const load = useCallback(async () => {
-    setScanning(true);
+  const granted = await requestBluetoothPermissions();
+  if (!granted) {
+    Alert.alert(
+      "Permission Required",
+      "Bluetooth permissions are required to scan printers."
+    );
+    return;
+  }
+
+  setScanning(true);
     try {
       const p = await getPairedPrinter();
       setPaired(p);
