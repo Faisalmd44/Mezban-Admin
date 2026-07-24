@@ -2,6 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/mezbaan-api`;
 
+const API_BASE =
+  "https://jppuqbujxtmemusmbgnv.supabase.co/functions/v1/mezbaan-api";
+
 async function getToken(): Promise<string | null> {
   return AsyncStorage.getItem("mez_token");
 }
