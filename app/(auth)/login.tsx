@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { COLORS, SPACING, RADIUS, SHADOW } from "@/src/theme";
 import { api } from "@/src/api";
-import { saveToken, getDeviceId } from "@/src/store";
+import { saveToken, getDeviceId, useApp } from "@/src/store";
 import { useEmailAuth } from "@/src/hooks/use-email-auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,11 +25,18 @@ export default function AdminLoginScreen() {
   const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { setUser } = useApp();
   const { signIn, signUp, resetPassword, loading: authLoading, error: authError, setError: setAuthError, needsConfirmation } = useEmailAuth();
   const displayError = error || authError;
 
-  const finishLogin = async (res: { token: string; user: any }) => {
+  const finishLogin = async (res: { token: string; user?: any }) => {
     await saveToken(res.token);
+    try {
+      const me = await api.me();
+      setUser(me);
+    } catch {
+      setUser(res.user ?? null);
+    }
     router.replace("/(tabs)");
   };
 

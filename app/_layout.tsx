@@ -47,8 +47,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!bootDone) return;
-    const inAuth = segments[0] === "(auth)";
-    const onReset = segments[1] === "reset-password";
+    const seg = segments as readonly string[];
+    const inAuth = seg[0] === "(auth)";
+    const onReset = seg[1] === "reset-password";
     if (!user && !inAuth) router.replace("/(auth)/login");
     else if (user && inAuth && !onReset) router.replace("/(tabs)");
   }, [bootDone, user, segments, router]);
