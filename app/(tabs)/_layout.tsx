@@ -29,7 +29,6 @@ export default function TabsLayout() {
           {pendingCount > 0 ? (<View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>) : null}
         </View>
       )}} />
-      <Tabs.Screen name="printer" options={{ title: "Printer", tabBarIcon: ({ color, size }) => <Ionicons name="printer" size={size} color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} /> }} />
     </Tabs>
   );
