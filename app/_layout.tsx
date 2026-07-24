@@ -36,7 +36,16 @@ export default function RootLayout() {
       try {
         const token = await loadToken();
         if (token) {
-          try { const me = await api.me(); if (!cancelled) setUser(me); } catch { await clearToken(); }
+  try {
+    const me = await api.me();
+    if (!cancelled) {
+      setUser(me);
+    }
+  } catch (e) {
+    console.log("Auto login failed:", e);
+    // Token clear mat karo
+  }
+}
         }
         if (!cancelled) setCart(await loadCart());
       } finally { if (!cancelled) setBootDone(true); }
