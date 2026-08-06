@@ -18,6 +18,7 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-firebase/app": "^26.1.0",
     "@react-native-firebase/messaging": "^26.1.0",
+    "react-native-thermal-receipt-printer-image-qr": "^0.1.12",
     "@supabase/supabase-js": "^2.112.0",
     "clsx": "^2.1.1",
     "expo": "^54.0.36",
