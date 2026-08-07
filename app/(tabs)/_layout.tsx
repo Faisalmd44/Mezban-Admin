@@ -21,25 +21,37 @@ export default function TabsLayout() {
           {pendingCount > 0 ? (<View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>) : null}
         </View>
       )}} />
-<Tabs.Screen
-  name="pos"
-  options={{
-    title: 'Offline POS',
-    tabBarIcon: ({ color }) => (
-      <Ionicons name="cart-outline" size={24} color={color} />
-    ),
-  }}
-/>
+      
+      <Tabs.Screen
+        name="pos"
+        options={{
+          title: 'Offline POS',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart-outline" size={size || 24} color={color} />
+          ),
+        }}
+      />
 
       <Tabs.Screen name="orders" options={{ title: "Orders", tabBarIcon: ({ color, size }) => <Ionicons name="receipt" size={size} color={color} /> }} />
       <Tabs.Screen name="menu" options={{ title: "Menu", tabBarIcon: ({ color, size }) => <Ionicons name="restaurant" size={size} color={color} /> }} />
+      
       <Tabs.Screen name="notifications" options={{ title: "Alerts", tabBarIcon: ({ color, size }) => (
         <View>
           <Ionicons name="notifications" size={size} color={color} />
           {pendingCount > 0 ? (<View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>) : null}
         </View>
       )}} />
+      
       <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} /> }} />
+
+      {/* Printer Tab */}
+      <Tabs.Screen 
+        name="printer" 
+        options={{ 
+          title: "Printer", 
+          tabBarIcon: ({ color, size }) => <Ionicons name="print-outline" size={size} color={color} /> 
+        }} 
+      />
     </Tabs>
   );
 }
@@ -48,3 +60,4 @@ const styles = StyleSheet.create({
   badge: { position: "absolute", right: -6, top: -3, backgroundColor: COLORS.error, borderRadius: 999, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4, borderWidth: 2, borderColor: COLORS.black },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "900" },
 });
+

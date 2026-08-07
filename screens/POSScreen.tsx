@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  TextInput, ScrollView, Alert, Modal 
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  TextInput, ScrollView, Alert, Modal, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { supabase } from '../supabaseClient'; // Adjust path according to your structure
 
@@ -10,7 +10,7 @@ export default function POSScreen({ navigation }) {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cart, setCart] = useState([]);
-  
+
   // Billing Options
   const [orderMode, setOrderMode] = useState('dine_in'); // dine_in, takeaway, delivery
   const [paymentMode, setPaymentMode] = useState('cash'); // cash, upi, card
@@ -42,7 +42,7 @@ export default function POSScreen({ navigation }) {
     setCart(prevCart => {
       const existing = prevCart.find(c => c.id === item.id);
       if (existing) {
-        return prevCart.map(c => 
+        return prevCart.map(c =>
           c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
         );
       }
@@ -51,7 +51,7 @@ export default function POSScreen({ navigation }) {
   };
 
   const updateQuantity = (id, delta) => {
-    setCart(prevCart => 
+    setCart(prevCart =>
       prevCart.map(item => {
         if (item.id === id) {
           const newQty = item.quantity + delta;
@@ -64,9 +64,9 @@ export default function POSScreen({ navigation }) {
 
   // Calculation Logic
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  const discountAmt = discountType === 'flat' 
-    ? Number(discountValue) || 0 
+
+  const discountAmt = discountType === 'flat'
+    ? Number(discountValue) || 0
     : (subtotal * (Number(discountValue) || 0)) / 100;
 
   const packingAmt = Number(packingCharge) || 0;
@@ -106,9 +106,9 @@ export default function POSScreen({ navigation }) {
       if (error) throw error;
 
       Alert.alert('Success 🎉', 'Offline Sale Save Ho Gayi!', [
-        { 
-          text: 'Print Receipt 🖨️', 
-          onPress: () => handlePrintReceipt(data[0]) 
+        {
+          text: 'Print Receipt 🖨️',
+          onPress: () => handlePrintReceipt(data[0])
         },
         { text: 'New Order', onPress: resetForm }
       ]);
@@ -131,126 +131,133 @@ export default function POSScreen({ navigation }) {
     console.log('Printing Order:', order);
   };
 
-  const filteredItems = selectedCategory === 'All' 
-    ? menuItems 
+  const filteredItems = selectedCategory === 'All'
+    ? menuItems
     : menuItems.filter(item => item.category === selectedCategory);
 
   return (
-    <View style={styles.container}>
-      {/* LEFT PANEL: Menu Items */}
-      <View style={styles.menuContainer}>
-        {/* Category Selector */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
-          {categories.map(cat => (
-            <TouchableOpacity 
-              key={cat} 
-              style={[styles.catChip, selectedCategory === cat && styles.activeCatChip]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text style={[styles.catText, selectedCategory === cat && styles.activeCatText]}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <View style={styles.container}>
+          {/* LEFT PANEL: Menu Items */}
+          <View style={styles.menuContainer}>
+            {/* Category Selector */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.catChip, selectedCategory === cat && styles.activeCatChip]}
+                  onPress={() => setSelectedCategory(cat)}
+                >
+                  <Text style={[styles.catText, selectedCategory === cat && styles.activeCatText]}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-        {/* Menu Items Grid */}
-        <FlatList
-          data={filteredItems}
-          numColumns={2}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.itemCard} onPress={() => addToCart(item)}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>₹{item.price}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+            {/* Menu Items Grid */}
+            <FlatList
+              data={filteredItems}
+              numColumns={2}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.itemCard} onPress={() => addToCart(item)}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemPrice}>₹{item.price}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
 
-      {/* RIGHT PANEL: Cart & Billing */}
-      <View style={styles.cartContainer}>
-        <Text style={styles.cartHeader}>🛒 Offline Bill</Text>
+          {/* RIGHT PANEL: Cart & Billing */}
+          <View style={styles.cartContainer}>
+            <Text style={styles.cartHeader}>🛒 Offline Bill</Text>
 
-        {/* Order Mode (Dine-In/Takeaway/Delivery) */}
-        <View style={styles.modeRow}>
-          {['dine_in', 'takeaway', 'delivery'].map(mode => (
-            <TouchableOpacity 
-              key={mode} 
-              style={[styles.modeBtn, orderMode === mode && styles.activeModeBtn]}
-              onPress={() => setOrderMode(mode)}
-            >
-              <Text style={styles.modeBtnText}>{mode.replace('_', ' ').toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Cart Items List */}
-        <ScrollView style={styles.cartList}>
-          {cart.map(item => (
-            <View key={item.id} style={styles.cartRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cartItemName}>{item.name}</Text>
-                <Text style={styles.cartItemPrice}>₹{item.price} x {item.quantity}</Text>
-              </View>
-              <View style={styles.qtyControls}>
-                <TouchableOpacity onPress={() => updateQuantity(item.id, -1)} style={styles.qtyBtn}><Text>-</Text></TouchableOpacity>
-                <Text style={styles.qtyText}>{item.quantity}</Text>
-                <TouchableOpacity onPress={() => updateQuantity(item.id, 1)} style={styles.qtyBtn}><Text>+</Text></TouchableOpacity>
-              </View>
+            {/* Order Mode (Dine-In/Takeaway/Delivery) */}
+            <View style={styles.modeRow}>
+              {['dine_in', 'takeaway', 'delivery'].map(mode => (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.modeBtn, orderMode === mode && styles.activeModeBtn]}
+                  onPress={() => setOrderMode(mode)}
+                >
+                  <Text style={styles.modeBtnText}>{mode.replace('_', ' ').toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
-        </ScrollView>
 
-        {/* Adjustments: Discount & Packing */}
-        <View style={styles.calcRow}>
-          <Text style={styles.calcLabel}>Discount:</Text>
-          <TouchableOpacity onPress={() => setDiscountType(discountType === 'flat' ? 'percent' : 'flat')} style={styles.toggleBtn}>
-            <Text style={{fontWeight: 'bold'}}>{discountType === 'flat' ? '₹' : '%'}</Text>
-          </TouchableOpacity>
-          <TextInput 
-            style={styles.calcInput} 
-            keyboardType="numeric" 
-            value={discountValue} 
-            onChangeText={setDiscountValue} 
-          />
-        </View>
+            {/* Cart Items List */}
+            <ScrollView style={styles.cartList}>
+              {cart.map(item => (
+                <View key={item.id} style={styles.cartRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.cartItemName}>{item.name}</Text>
+                    <Text style={styles.cartItemPrice}>₹{item.price} x {item.quantity}</Text>
+                  </View>
+                  <View style={styles.qtyControls}>
+                    <TouchableOpacity onPress={() => updateQuantity(item.id, -1)} style={styles.qtyBtn}><Text>-</Text></TouchableOpacity>
+                    <Text style={styles.qtyText}>{item.quantity}</Text>
+                    <TouchableOpacity onPress={() => updateQuantity(item.id, 1)} style={styles.qtyBtn}><Text>+</Text></TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
 
-        <View style={styles.calcRow}>
-          <Text style={styles.calcLabel}>Packing Charge (₹):</Text>
-          <TextInput 
-            style={styles.calcInput} 
-            keyboardType="numeric" 
-            value={packingCharge} 
-            onChangeText={setPackingCharge} 
-          />
-        </View>
+            {/* Adjustments: Discount & Packing */}
+            <View style={styles.calcRow}>
+              <Text style={styles.calcLabel}>Discount:</Text>
+              <TouchableOpacity onPress={() => setDiscountType(discountType === 'flat' ? 'percent' : 'flat')} style={styles.toggleBtn}>
+                <Text style={{fontWeight: 'bold'}}>{discountType === 'flat' ? '₹' : '%'}</Text>
+              </TouchableOpacity>
+              <TextInput
+                style={styles.calcInput}
+                keyboardType="numeric"
+                value={discountValue}
+                onChangeText={setDiscountValue}
+              />
+            </View>
 
-        {/* Payment Mode */}
-        <Text style={styles.calcLabel}>Payment Mode:</Text>
-        <View style={styles.modeRow}>
-          {['cash', 'upi', 'card'].map(pay => (
-            <TouchableOpacity 
-              key={pay} 
-              style={[styles.payBtn, paymentMode === pay && styles.activePayBtn]}
-              onPress={() => setPaymentMode(pay)}
-            >
-              <Text style={styles.modeBtnText}>{pay.toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+            <View style={styles.calcRow}>
+              <Text style={styles.calcLabel}>Packing Charge (₹):</Text>
+              <TextInput
+                style={styles.calcInput}
+                keyboardType="numeric"
+                value={packingCharge}
+                onChangeText={setPackingCharge}
+              />
+            </View>
 
-        {/* Total & Checkout */}
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalText}>Grand Total: ₹{grandTotal}</Text>
-          <TouchableOpacity 
-            style={styles.checkoutBtn} 
-            onPress={handleCheckout}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.checkoutBtnText}>{isSubmitting ? 'Saving...' : 'COMPLETE SALE 🚀'}</Text>
-          </TouchableOpacity>
+            {/* Payment Mode */}
+            <Text style={styles.calcLabel}>Payment Mode:</Text>
+            <View style={styles.modeRow}>
+              {['cash', 'upi', 'card'].map(pay => (
+                <TouchableOpacity
+                  key={pay}
+                  style={[styles.payBtn, paymentMode === pay && styles.activePayBtn]}
+                  onPress={() => setPaymentMode(pay)}
+                >
+                  <Text style={styles.modeBtnText}>{pay.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Total & Checkout */}
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalText}>Grand Total: ₹{grandTotal}</Text>
+              <TouchableOpacity
+                style={styles.checkoutBtn}
+                onPress={handleCheckout}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.checkoutBtnText}>{isSubmitting ? 'Saving...' : 'COMPLETE SALE 🚀'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
